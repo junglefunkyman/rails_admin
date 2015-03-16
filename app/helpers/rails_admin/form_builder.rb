@@ -30,12 +30,17 @@ module RailsAdmin
       end
     end
 
+    def is_long_labeled_field(field)
+      field.name =~ /^q\d+$/ 
+    end
+
     def field_wrapper_for(field, nested_in)
+      label_size = is_long_labeled_field(field) ? 6 : 2
       if field.label
         # do not show nested field if the target is the origin
         unless nested_field_association?(field, nested_in)
           @template.content_tag(:div, class: "form-group control-group #{field.type_css_class} #{field.css_class} #{'error' if field.errors.present?}", id: "#{dom_id(field)}_field") do
-            label(field.method_name, capitalize_first_letter(field.label), class: 'col-sm-2 control-label') +
+            label(field.method_name, capitalize_first_letter(field.label), class: "col-sm-#{label_size} control-label") +
               (field.nested_form ? field_for(field) : input_for(field))
           end
         end
@@ -45,7 +50,7 @@ module RailsAdmin
     end
 
     def input_for(field)
-      css = 'col-sm-10 controls'
+      css = is_long_labeled_field(field) ? 'col-sm-6 controls' : 'col-sm-10 controls'
       css += ' has-error' if field.errors.present?
       @template.content_tag(:div, class: css) do
         field_for(field) +
