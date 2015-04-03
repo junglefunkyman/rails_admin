@@ -56,6 +56,10 @@ module RailsAdmin
         @object_label_method ||= Config.label_methods.detect { |method| (@dummy_object ||= abstract_model.model.new).respond_to? method } || :rails_admin_default_object_label_method
       end
 
+      register_instance_option :horizontal do
+        @horizontal ||= false
+      end
+
       register_instance_option :label do
         (@label ||= {})[::I18n.locale] ||= abstract_model.model.model_name.human
       end

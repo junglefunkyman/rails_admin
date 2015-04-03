@@ -21,17 +21,45 @@ module RailsAdmin
 
     def fieldset_for(fieldset, nested_in)
       return unless (fields = fieldset.with(form: self, object: @object, view: @template, controller: @template.controller).visible_fields).length > 0
-      @template.content_tag :fieldset do
-        contents = []
-        contents << @template.content_tag(:legend, %(<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}).html_safe, style: "#{fieldset.name == :default ? 'display:none' : ''}")
-        contents << @template.content_tag(:p, fieldset.help) if fieldset.help.present?
-        contents << fields.collect { |field| field_wrapper_for(field, nested_in) }.join
-        contents.join.html_safe
+      if RailsAdmin.config(object).horizontal
+        thead = @template.content_tag :thead do
+          @template.content_tag :tr do
+            fields.collect {|field| @template.content_tag(:th, field.label)}.join().html_safe
+          end
+        end
+
+        tbody = @template.content_tag :tbody do
+          @template.content_tag:tr, fields.collect { |field| table_field_wrapper_for(field, nested_in) }.join().html_safe
+        end
+        @template.content_tag :fieldset do
+          @template.content_tag(:legend, %(<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}).html_safe, style: "#{fieldset.name == :default ? 'display:none' : ''}")
+          .concat(@template.content_tag :table, thead.concat(tbody))
+        end
+      else
+        @template.content_tag :fieldset do
+          contents = []
+          contents << @template.content_tag(:legend, %(<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}).html_safe, style: "#{fieldset.name == :default ? 'display:none' : ''}")
+          contents << @template.content_tag(:p, fieldset.help) if fieldset.help.present?
+          contents << fields.collect { |field| field_wrapper_for(field, nested_in) }.join
+          contents.join.html_safe
+        end
       end
     end
 
     def is_long_labeled_field(field)
       field.name =~ /^q\d+$/ 
+    end
+
+    def table_field_wrapper_for(field, nested_in)
+      if field.label
+        unless nested_field_association?(field, nested_in)
+          @template.content_tag(:td) do
+            (field.nested_form ? field_for(field) : input_for(field))
+          end
+        else
+          field.nested_form ? field_for(field) : input_for(field)
+        end
+      end
     end
 
     def field_wrapper_for(field, nested_in)
