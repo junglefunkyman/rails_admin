@@ -60,6 +60,10 @@ module RailsAdmin
         @horizontal ||= false
       end
 
+      register_instance_option :partial do
+        @partial ||= nil
+      end
+
       register_instance_option :label do
         (@label ||= {})[::I18n.locale] ||= abstract_model.model.model_name.human
       end

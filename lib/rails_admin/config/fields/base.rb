@@ -214,6 +214,10 @@ module RailsAdmin
           []
         end
 
+        register_instance_option :radio? do
+          false
+        end
+
         register_instance_option :render do
           bindings[:view].render partial: "rails_admin/main/#{partial}", locals: {field: self, form: bindings[:form]}
         end

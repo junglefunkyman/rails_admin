@@ -11,10 +11,20 @@ module RailsAdmin
           nested_in: false,
         )
 
+        groups = visible_groups(options[:model_config], generator_action(options[:action], options[:nested_in])).collect do |fieldset|
+          fieldset_for fieldset, options[:nested_in]
+        end
+
+        puts object
+        model = RailsAdmin.config(object)
+        if model.partial != nil
+          groups = groups[0]
+        else
+          groups = groups.join.html_safe
+        end
+        content = model.partial != nil ? groups + @template.render(partial: model.partial, :locals => {:clamp => object, :f => self, :editable => true}) : groups
         object_infos +
-          visible_groups(options[:model_config], generator_action(options[:action], options[:nested_in])).collect do |fieldset|
-            fieldset_for fieldset, options[:nested_in]
-          end.join.html_safe +
+            content +
           (options[:nested_in] ? '' : @template.render(partial: 'rails_admin/main/submit_buttons'))
       end
     end
@@ -99,6 +109,9 @@ module RailsAdmin
     def field_for(field)
       if field.read_only?
         field.pretty_value.to_s.html_safe
+      elsif field.radio?
+        field.partial 'radio_enum'
+        field.render
       else
         field.render
       end
