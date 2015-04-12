@@ -63,7 +63,7 @@ module RailsAdmin
     end
 
     def field_wrapper_for(field, nested_in)
-      label_size = is_long_labeled_field(field) ? 6 : 2
+      label_size = layout(field)[0]
       if field.label
         # do not show nested field if the target is the origin
         unless nested_field_association?(field, nested_in)
@@ -78,7 +78,8 @@ module RailsAdmin
     end
 
     def input_for(field)
-      css = is_long_labeled_field(field) ? 'col-sm-6 controls' : 'col-sm-10 controls'
+      input_size = layout(field)[1]
+      css = "col-sm-#{input_size} controls"
       css += ' has-error' if field.errors.present?
       @template.content_tag(:div, class: css) do
         field_for(field) +
@@ -170,6 +171,15 @@ module RailsAdmin
       field.inverse_of.presence && nested_in.presence && field.inverse_of == nested_in.name &&
         (@template.instance_variable_get(:@model_config).abstract_model == field.associated_model_config.abstract_model ||
          field.name == nested_in.inverse_of)
+    end
+
+
+    def layout(field)
+      controls = controls_size(field)
+      [12 - controls, controls]
+    end
+    def controls_size(field)
+      field.radio? && field.enum.size >= 4 ? 8 : is_long_labeled_field(field) ? 6 : 10
     end
   end
 end
