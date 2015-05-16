@@ -312,7 +312,7 @@ module RailsAdmin
         end
 
         def submit_name
-          (abstract_model.model_name.underscore.to_s + '[' + name.to_s + ']' + (multiple? ? "[]" : "")).to_s
+          (abstract_model.model_name.underscore.to_s + '[' + name.to_s + ']' + (defined? multiple? && multiple? ? "[]" : "")).to_s
         end
 
         def multiple?
