@@ -120,7 +120,7 @@ module RailsAdmin
 
         # Accessor for field's help text displayed below input field.
         register_instance_option :help do
-          (@help ||= {})[::I18n.locale] ||= generic_field_help
+          (@help ||= {})[::I18n.locale] ||= false
         end
 
         register_instance_option :html_attributes do
