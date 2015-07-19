@@ -64,6 +64,10 @@ module RailsAdmin
         @partial ||= nil
       end
 
+      register_instance_option :controls_size do
+        controls_size ||= 10
+      end
+
       register_instance_option :label do
         (@label ||= {})[::I18n.locale] ||= abstract_model.model.model_name.human
       end

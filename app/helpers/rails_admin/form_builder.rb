@@ -11,12 +11,12 @@ module RailsAdmin
           nested_in: false,
         )
 
+        model = RailsAdmin.config(object)
+
         groups = visible_groups(options[:model_config], generator_action(options[:action], options[:nested_in])).collect do |fieldset|
-          fieldset_for fieldset, options[:nested_in]
+          fieldset_for fieldset, options[:nested_in], model
         end
 
-        puts object
-        model = RailsAdmin.config(object)
         if model.partial != nil
           groups = groups[0]
         else
@@ -29,70 +29,38 @@ module RailsAdmin
       end
     end
 
-    def fieldset_for(fieldset, nested_in)
+    def fieldset_for(fieldset, nested_in, model)
       return unless (fields = fieldset.with(form: self, object: @object, view: @template, controller: @template.controller).visible_fields).length > 0
-      if RailsAdmin.config(object).horizontal
-        thead = @template.content_tag :thead do
-          @template.content_tag :tr do
-            fields.collect {|field| @template.content_tag(:th, field.label)}.join().html_safe
-          end
-        end
-
-        tbody = @template.content_tag :tbody do
-          @template.content_tag:tr, fields.collect { |field| table_field_wrapper_for(field, nested_in) }.join().html_safe
-        end
-        @template.content_tag :fieldset do
-          @template.content_tag(:legend, %(<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}).html_safe, style: "#{fieldset.name == :default ? 'display:none' : ''}")
-          .concat(@template.content_tag :table, thead.concat(tbody))
-        end
-      else
-        @template.content_tag :fieldset do
-          contents = []
-          contents << @template.content_tag(:legend, %(<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}).html_safe, style: "#{fieldset.name == :default ? 'display:none' : ''}")
-          contents << @template.content_tag(:p, fieldset.help) if fieldset.help.present?
-          contents << fields.collect { |field| field_wrapper_for(field, nested_in) }.join
-          contents.join.html_safe
-        end
+      @template.content_tag :fieldset do
+        contents = []
+        contents << @template.content_tag(:legend, %(<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}).html_safe, style: "#{fieldset.name == :default ? 'display:none' : ''}")
+        contents << @template.content_tag(:p, fieldset.help) if fieldset.help.present?
+        contents << fields.collect { |field| field_wrapper_for(field, nested_in, model) }.join
+        contents.join.html_safe
       end
     end
 
-    def is_long_labeled_field(field)
-      field.name =~ /^q\d+$/ 
-    end
-
-    def table_field_wrapper_for(field, nested_in)
-      if field.label
-        unless nested_field_association?(field, nested_in)
-          @template.content_tag(:td) do
-            (field.nested_form ? field_for(field) : input_for(field))
-          end
-        else
-          field.nested_form ? field_for(field) : input_for(field)
-        end
-      end
-    end
-
-    def field_wrapper_for(field, nested_in)
-      label_size = layout(field)[0]
+    def field_wrapper_for(field, nested_in, model)
+      label_size = layout(field, model)[0]
       if field.label
         # do not show nested field if the target is the origin
         unless nested_field_association?(field, nested_in)
           @template.content_tag(:div, class: "form-group control-group #{field.type_css_class} #{field.css_class} #{'error' if field.errors.present?}", id: "#{dom_id(field)}_field") do
             label(field.method_name, capitalize_first_letter(field.label), class: "col-sm-#{label_size} control-label") +
-              (field.nested_form ? field_for(field) : input_for(field))
+              (field.nested_form ? field_for(field, model) : input_for(field, model))
           end
         end
       else
-        field.nested_form ? field_for(field) : input_for(field)
+        field.nested_form ? field_for(field, model) : input_for(field, model)
       end
     end
 
-    def input_for(field)
-      input_size = layout(field)[1]
+    def input_for(field, model)
+      input_size = layout(field, model)[1]
       css = "col-sm-#{input_size} controls"
       css += ' has-error' if field.errors.present?
       @template.content_tag(:div, class: css) do
-        field_for(field) +
+        field_for(field, model) +
           errors_for(field) +
           help_for(field)
       end
@@ -106,12 +74,9 @@ module RailsAdmin
       field.help.present? ? @template.content_tag(:span, field.help, class: 'help-block') : ''.html_safe
     end
 
-    def field_for(field)
+    def field_for(field, model)
       if field.read_only?
         field.pretty_value.to_s.html_safe
-      elsif field.radio?
-        field.partial 'radio_enum'
-        field.render
       else
         field.render
       end
@@ -187,12 +152,9 @@ module RailsAdmin
     end
 
 
-    def layout(field)
-      controls = controls_size(field)
+    def layout(field, model)
+      controls = model.controls_size
       [12 - controls, controls]
-    end
-    def controls_size(field)
-      field.radio? && field.enum.size >= 4 ? 8 : is_long_labeled_field(field) ? 6 : 10
     end
   end
 end
