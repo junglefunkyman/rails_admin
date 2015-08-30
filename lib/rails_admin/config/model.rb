@@ -68,6 +68,10 @@ module RailsAdmin
         controls_size ||= 10
       end
 
+      register_instance_option :questionary do
+        false
+      end
+
       register_instance_option :label do
         (@label ||= {})[::I18n.locale] ||= abstract_model.model.model_name.human
       end

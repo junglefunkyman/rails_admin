@@ -42,11 +42,12 @@ module RailsAdmin
 
     def field_wrapper_for(field, nested_in, model)
       label_size = layout(field, model)[0]
+      add_class = model.questionary ? 'questionary' : ''
       if field.label
         # do not show nested field if the target is the origin
         unless nested_field_association?(field, nested_in)
           @template.content_tag(:div, class: "form-group control-group #{field.type_css_class} #{field.css_class} #{'error' if field.errors.present?}", id: "#{dom_id(field)}_field") do
-            label(field.method_name, capitalize_first_letter(field.label), class: "col-sm-#{label_size} control-label") +
+            label(field.method_name, capitalize_first_letter(field.label), class: "col-sm-#{label_size} control-label #{add_class}") +
               (field.nested_form ? field_for(field, model) : input_for(field, model))
           end
         end
