@@ -19,4 +19,5 @@
 //=  require 'rails_admin/bootstrap/bootstrap'
 //=  require 'rails_admin/ra.widgets'
 //=  require 'rails_admin/ui'
+//=  require 'rails_admin/save.unverified.coffee'
 //=  require 'rails_admin/custom/ui'
