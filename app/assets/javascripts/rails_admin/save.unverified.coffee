@@ -1,3 +1,5 @@
 $(document).on "rails_admin.dom_ready", ->
-  $('button[name="_save_unverified"]').on "click", ->
+  button = $('button[name="_save_unverified"]')
+  button.toggle !!$('.has-error').length
+  button.on "click", ->
     $('input.skip_validation').val(true)
