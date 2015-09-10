@@ -25,6 +25,26 @@ describe RailsAdmin::MainController, type: :controller do
       expect(RailsAdmin.config(Player).abstract_model).not_to receive(:count)
       controller.dashboard
     end
+
+    it 'counts are different for same-named models in different modules' do
+      allow(RailsAdmin.config(User::Confirmed).abstract_model).to receive(:count).and_return(10)
+      allow(RailsAdmin.config(Comment::Confirmed).abstract_model).to receive(:count).and_return(0)
+
+      controller.dashboard
+      expect(controller.instance_variable_get('@count')['User::Confirmed']).to be 10
+      expect(controller.instance_variable_get('@count')['Comment::Confirmed']).to be 0
+    end
+
+    it 'most recent change dates are different for same-named models in different modules' do
+      user_update = 10.days.ago.to_date
+      comment_update = 20.days.ago.to_date
+      FactoryGirl.create(:user_confirmed, updated_at: user_update)
+      FactoryGirl.create(:comment_confirmed, updated_at: comment_update)
+
+      controller.dashboard
+      expect(controller.instance_variable_get('@most_recent_changes')['User::Confirmed']).to eq user_update
+      expect(controller.instance_variable_get('@most_recent_changes')['Comment::Confirmed']).to eq comment_update
+    end
   end
 
   describe '#check_for_cancel' do
@@ -198,7 +218,7 @@ describe RailsAdmin::MainController, type: :controller do
       expect(controller.list_entries.length).to eq(@players.size)
     end
 
-    it 'orders associated collection records by desc' do
+    it 'orders associated collection records by id, descending' do
       @players = 3.times.collect do
         FactoryGirl.create :player
       end
@@ -305,6 +325,7 @@ describe RailsAdmin::MainController, type: :controller do
         field :paperclip_asset do
           delete_method :delete_paperclip_asset
         end
+        field :refile_asset if defined?(Refile)
       end
       controller.params = HashWithIndifferentAccess.new(
         'field_test' => {
@@ -317,7 +338,7 @@ describe RailsAdmin::MainController, type: :controller do
           'paperclip_asset' => 'test',
           'delete_paperclip_asset' => 'test',
           'should_not_be_here' => 'test',
-        },
+        }.merge(defined?(Refile) ? {'refile_asset' => 'test', 'remove_refile_asset' => 'test'} : {}),
       )
 
       controller.send(:sanitize_params_for!, :create, RailsAdmin.config(FieldTest), controller.params['field_test'])
@@ -331,7 +352,7 @@ describe RailsAdmin::MainController, type: :controller do
           'retained_dragonfly_asset' => 'test',
           'paperclip_asset' => 'test',
           'delete_paperclip_asset' => 'test',
-        })
+        }.merge(defined?(Refile) ? {'refile_asset' => 'test', 'remove_refile_asset' => 'test'} : {}))
     end
 
     it 'allows for polymorphic associations parameters' do

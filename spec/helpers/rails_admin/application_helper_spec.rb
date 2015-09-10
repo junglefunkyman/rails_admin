@@ -363,5 +363,34 @@ describe RailsAdmin::ApplicationHelper, type: :helper do
         expect(helper.bulk_menu(RailsAdmin::AbstractModel.new(Player))).not_to match('blub')
       end
     end
+
+    describe '#edit_user_link' do
+      it "don't include email column" do
+        allow(helper).to receive(:_current_user).and_return(FactoryGirl.create(:player))
+        result = helper.edit_user_link
+        expect(result).to eq nil
+      end
+
+      it 'include email column' do
+        allow(helper).to receive(:_current_user).and_return(FactoryGirl.create(:user))
+        result = helper.edit_user_link
+        expect(result).to match('href')
+      end
+    end
+  end
+
+  describe '#flash_alert_class' do
+    it 'makes errors red with alert-danger' do
+      expect(helper.flash_alert_class('error')).to eq('alert-danger')
+    end
+    it 'makes alerts yellow with alert-warning' do
+      expect(helper.flash_alert_class('alert')).to eq('alert-warning')
+    end
+    it 'makes notices blue with alert-info' do
+      expect(helper.flash_alert_class('notice')).to eq('alert-info')
+    end
+    it 'prefixes others with "alert-"' do
+      expect(helper.flash_alert_class('foo')).to eq('alert-foo')
+    end
   end
 end
