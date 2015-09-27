@@ -925,6 +925,10 @@
 			Math.abs(offset.left + tpWidth - viewWidth) : 0);
             offset.top -= Math.min(offset.top, (offset.top + tpHeight > viewHeight && viewHeight > tpHeight) ?
 			Math.abs(tpHeight + inputHeight) : 0);
+            var modal$ = $('#modal');
+            if (modal$.length) {
+                offset.top -= modal$.offset().top;
+            }
 
             return offset;
         },
