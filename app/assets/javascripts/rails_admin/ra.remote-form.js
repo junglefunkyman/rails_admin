@@ -69,6 +69,7 @@
           dialog = this._getModal(),
           form = dialog.find("form"),
           saveButtonText = dialog.find(":submit[name=_save]").html(),
+          saveIgnoreButtonText = "Save ignoring errors",
           cancelButtonText = dialog.find(":submit[name=_continue]").html();
       dialog.find('.form-actions').remove();
 
@@ -84,7 +85,14 @@
         return false;
       }).html(saveButtonText);
 
-      $(document).trigger('rails_admin.dom_ready', [form])
+      dialog.find('a.save-unverified').unbind().click(function(){
+        $('input.skip_validation').val(true);
+        form.submit();
+        return false;
+      }).html(saveIgnoreButtonText)
+        .toggle(!!$('.has-error').length);
+
+      $(document).trigger('rails_admin.dom_ready', [form]);
 
       form.bind("ajax:complete", function(xhr, data, status) {
         if (status == 'error') {
@@ -135,6 +143,7 @@
             <div class="modal-footer">\
               <a href="#" class="btn cancel-action">...</a>\
               <a href="#" class="btn btn-primary save-action">...</a>\
+              <a href="#" class="btn btn-danger save-unverified" style="display: none;">...</a>\
             </div>\
             </div>\
             </div>\

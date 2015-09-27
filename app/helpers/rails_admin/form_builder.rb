@@ -23,8 +23,11 @@ module RailsAdmin
           groups = groups.join.html_safe
         end
         content = model.partial != nil ? groups + @template.render(partial: model.partial, :locals => {:clamp => object, :f => self, :editable => true}) : groups
+
+        skip_validation_controls = @template.render(partial: 'rails_admin/main/skip_validation_controls')
         object_infos +
             content +
+            skip_validation_controls +
           (options[:nested_in] ? '' : @template.render(partial: 'rails_admin/main/submit_buttons'))
       end
     end
