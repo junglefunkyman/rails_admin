@@ -35,7 +35,8 @@ module RailsAdmin
 
     def to_csv(options = {})
       # encoding shenanigans first
-      @encoding_from = Encoding.find(UTF8_ENCODINGS.include?(@abstract_model.encoding) ? 'UTF-8' : @abstract_model.encoding)
+      enc = @abstract_model.encoding != 'iso_1' ? @abstract_model.encoding : 'ISO-8859-1'
+      @encoding_from = Encoding.find(UTF8_ENCODINGS.include?(enc) ? 'UTF-8' : enc)
       @encoding_to = Encoding.find(options[:encoding_to].presence || @encoding_from)
 
       csv_string = generate_csv_string(options)
