@@ -142,6 +142,7 @@ en:
       csv:
         header_for_root_methods: "%{name}" # 'model' is available
         header_for_association_methods: "%{name} [%{association}]"
+        header_for_association_methods_sub: "%{name} [%{association}][%{sub}]"
         encoding_to: "Encode to"
         encoding_to_help: "Choose output encoding. Leave empty to let current input encoding untouched: (%{name})"
         skip_header: "No header"
