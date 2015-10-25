@@ -1,5 +1,6 @@
 # encoding: UTF-8
 require 'csv'
+require 'pp'
 
 module RailsAdmin
   class CSVConverter
@@ -28,11 +29,11 @@ module RailsAdmin
                   :include => {
                       :transport_type => {:only => [:id]},
                       :activity_freq => {:only => [:id]},
-                      :activity_types => {:only => [:id]},
-                      :snack_types => {:only => [:id]},
-                      :cooking_preferences => {:only => [:id]},
-                      :food_types => {:only => [:id]},
-                      :drink_types => {:only => [:id]},
+                      :activity_types => {:only => [:id], :has_many => true},
+                      :snack_types => {:only => [:id], :has_many => true},
+                      :cooking_preferences => {:only => [:id], :has_many => true},
+                      :food_types => {:only => [:id], :has_many => true},
+                      :drink_types => {:only => [:id], :has_many => true},
                       :alco_preference => {:only => [:id]}
                   }
               },
@@ -95,7 +96,8 @@ module RailsAdmin
             abstract_model: abstract_model,
             model_config: mc,
             fields: methods.collect { |m| export_fields_for(m, mc).first },
-            subs: subs
+            subs: subs,
+            has_many: values[:has_many]
         }
         hash
       end
@@ -153,14 +155,22 @@ module RailsAdmin
           option_hash[:fields].collect do |field|
             ::I18n.t('admin.export.csv.header_for_association_methods', name: field.label, association: option_hash[:association].label)
           end
-          .concat(
-          option_hash[:subs].flat_map do |_sub_name, sub_hash|
-            sub_hash[:fields].collect do |field|
-              ::I18n.t('admin.export.csv.header_for_association_methods_sub', name: field.label, association: option_hash[:association].label, sub: sub_hash[:association].label)
-            end
-          end
-          )
+          .concat(sub_header(option_hash))
         end
+    end
+
+    def sub_header(option_hash)
+      option_hash[:subs].flat_map do |_sub_name, sub_hash|
+        if sub_hash[:has_many]
+          sub_hash[:model].all.collect do |value|
+            ::I18n.t('admin.export.csv.header_for_association_methods_sub', sub: value.name, association: option_hash[:association].label, name: sub_hash[:association].label)
+          end
+        else
+          sub_hash[:fields].collect do |field|
+            ::I18n.t('admin.export.csv.header_for_association_methods_sub', name: field.label, association: option_hash[:association].label, sub: sub_hash[:association].label)
+          end
+        end
+      end
     end
 
     def generate_csv_row(object)
@@ -172,21 +182,38 @@ module RailsAdmin
 
     def build_association_values(associations, object)
       associations.flat_map do |association_name, option_hash|
-        associated_objects = [object.send(association_name)].flatten.compact
+        puts '>>>>>>>>>'
+        puts association_name
+        if object.blank?
+          associated_objects = []
+        else
+          associated_objects = [object.send(association_name)].flatten.compact
+        end
         fields = option_hash[:fields].collect do |field|
           associated_objects.collect { |ao| field.with(object: ao).export_value.presence || @empty }.join(',')
         end
-        subs = option_hash[:subs].blank? ? [] : associated_objects.collect { |ao| build_association_values(option_hash[:subs], ao) }
-        # puts '!!!' + association_name.to_s + '!!!!'
-        # puts '>>>'
-        # puts subs.join(',')
-        # puts 'BLANK' if subs.blank?
-        # puts '<<<'
-        # puts fields.join(',')
+        subs = option_hash[:subs].blank? ? [] : build_association_values(option_hash[:subs], (associated_objects.blank? ? {} : associated_objects[0]))
+        if option_hash[:has_many]
+          split = fields[0].split(',')
+          pp fields
+          pp split
+          puts fields.size
+          puts split.size
+          puts '!' + association_name.to_s
+          subs_bitmap = [23]
+          m = option_hash[:model]
+          puts subs
+          puts subs.join(',')
+          m.all.each_with_index do |v, i|
+            puts v.id
+            subs_bitmap[i] = (split.include? v.id.to_s) ? 1 : 0
+          end
+          fields = subs_bitmap
+        end
         result = subs.blank? ? fields : fields.concat(subs).flatten
-        # puts '-------'
-        # puts result.join(',')
-        # puts '-------'
+        puts '-------'
+        puts result.join(',')
+        puts '-------'
         result
       end
     end
